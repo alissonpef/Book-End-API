@@ -32,8 +32,8 @@ This project is built on a foundation of modern software engineering practices:
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/alissonpef/Book-End-API.git
-cd Book-End-API
+git clone https://github.com/alissonpef/Digital-Library-Backend.git
+cd Digital-Library-Backend
 npm install
 ```
 
