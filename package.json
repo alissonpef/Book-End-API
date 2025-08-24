@@ -4,7 +4,7 @@
   "description": "Uma API RESTful completa e segura construída com Node.js e Express, projetada para gerenciar uma biblioteca digital com usuários, livros e um sistema de empréstimos. A autenticação é baseada em JSON Web Tokens (JWT), e as rotas são protegidas para garantir a integridade dos dados e o controle de acesso.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch server.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/alissonpef/Book-End-API/issues"
   },
-  "homepage": "https://github.com/alissonpef/Book-End-API#readme"
+  "homepage": "https://github.com/alissonpef/Book-End-API#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }
