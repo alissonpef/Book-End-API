@@ -1,5 +1,6 @@
 const HttpError = require("../errors/HttpError");
 
+// eslint-disable-next-line no-unused-vars
 function errorMiddleware(error, req, res, next) {
   if (error instanceof HttpError) {
     return res.status(error.status).json({ error: error.message });

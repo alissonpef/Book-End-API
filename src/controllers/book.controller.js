@@ -4,12 +4,10 @@ async function createBook(req, res) {
   try {
     const { title, author, quantityAvailable } = req.body;
     if (!title || !author || typeof quantityAvailable !== "number") {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Title, author, and quantityAvailable are required and must be of the correct type.",
-        });
+      return res.status(400).json({
+        error:
+          "Title, author, and quantityAvailable are required and must be of the correct type.",
+      });
     }
     const newBook = await bookService.createBook({
       title,
