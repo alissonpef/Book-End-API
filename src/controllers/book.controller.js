@@ -3,8 +3,13 @@ const bookService = require("../services/book.service");
 async function createBook(req, res) {
   try {
     const { title, author, quantityAvailable } = req.body;
-    if (!title || !author) {
-      return res.status(400).json({ error: "Title and author are required." });
+    if (!title || !author || typeof quantityAvailable !== "number") {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Title, author, and quantityAvailable are required and must be of the correct type.",
+        });
     }
     const newBook = await bookService.createBook({
       title,
@@ -45,12 +50,13 @@ async function getBookById(req, res) {
 async function updateBook(req, res) {
   try {
     const { id } = req.params;
-    const updatedBook = await bookService.updateBook(id, req.body);
-    res.status(200).json(updatedBook);
-  } catch (error) {
-    if (error.code === "P2025") {
+    const updateData = req.body;
+    const updatedBook = await bookService.updateBook(id, updateData);
+    if (!updatedBook) {
       return res.status(404).json({ error: "Book not found." });
     }
+    res.status(200).json(updatedBook);
+  } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Could not update the book." });
   }
@@ -59,12 +65,12 @@ async function updateBook(req, res) {
 async function deleteBook(req, res) {
   try {
     const { id } = req.params;
-    await bookService.deleteBook(id);
-    res.status(204).send();
-  } catch (error) {
-    if (error.code === "P2025") {
+    const deletedBook = await bookService.deleteBook(id);
+    if (!deletedBook) {
       return res.status(404).json({ error: "Book not found." });
     }
+    res.status(200).json(deletedBook);
+  } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Could not delete the book." });
   }

@@ -2,9 +2,8 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 async function createBook(bookData) {
-  const { title, author, quantityAvailable = 1 } = bookData;
   return await prisma.book.create({
-    data: { title, author, quantityAvailable },
+    data: bookData,
   });
 }
 
@@ -14,20 +13,26 @@ async function getAllBooks() {
 
 async function getBookById(id) {
   return await prisma.book.findUnique({
-    where: { id: parseInt(id) },
+    where: {
+      id: parseInt(id),
+    },
   });
 }
 
-async function updateBook(id, bookData) {
+async function updateBook(id, updateData) {
   return await prisma.book.update({
-    where: { id: parseInt(id) },
-    data: bookData,
+    where: {
+      id: parseInt(id),
+    },
+    data: updateData,
   });
 }
 
 async function deleteBook(id) {
   return await prisma.book.delete({
-    where: { id: parseInt(id) },
+    where: {
+      id: parseInt(id),
+    },
   });
 }
 
