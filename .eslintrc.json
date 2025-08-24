@@ -1,11 +1,21 @@
 {
-  "extends": ["eslint:recommended", "prettier"],
   "env": {
-    "node": true,
-    "es2021": true
+    "commonjs": true,
+    "es2021": true,
+    "node": true
   },
+  "extends": ["eslint:recommended", "prettier"],
   "parserOptions": {
     "ecmaVersion": "latest"
   },
-  "rules": {}
+  "rules": {},
+  "overrides": [
+    {
+      "files": ["**/*.test.js"],
+      "extends": ["plugin:jest/recommended"],
+      "env": {
+        "jest": true
+      }
+    }
+  ]
 }
