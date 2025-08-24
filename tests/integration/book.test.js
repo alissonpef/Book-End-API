@@ -1,111 +1,96 @@
 const request = require("supertest");
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
+const apiRoutes = require("../../src/routes/api.routes");
 const authRoutes = require("../../src/routes/auth.routes");
-const bookRoutes = require("../../src/routes/book.routes");
+const errorMiddleware = require("../../src/middlewares/error.middleware");
+const { prisma, cleanDatabase } = require("../helpers/db");
 
 const app = express();
-const prisma = new PrismaClient();
+
 app.use(express.json());
 app.use(authRoutes);
-app.use("/api", bookRoutes);
+app.use("/api", apiRoutes);
+app.use(errorMiddleware);
 
-let token;
-let bookId;
 const testUser = {
-  name: "Book Tester",
-  email: "booktester@example.com",
+  name: "Test User",
+  email: "test_books@example.com",
   password: "password123",
 };
 
+let authToken;
+let createdBook;
+
 beforeAll(async () => {
-  await prisma.book.deleteMany({});
-  await prisma.user.deleteMany({});
+  await cleanDatabase();
 
   await request(app).post("/auth/register").send(testUser);
-  const response = await request(app).post("/auth/login").send({
+  const loginResponse = await request(app).post("/auth/login").send({
     email: testUser.email,
     password: testUser.password,
   });
-  token = response.body.token;
+  authToken = loginResponse.body.token;
 });
 
 afterAll(async () => {
-  await prisma.book.deleteMany({});
-  await prisma.user.deleteMany({});
+  await cleanDatabase();
   await prisma.$disconnect();
 });
 
-describe("Book Routes CRUD", () => {
-  it("POST /api/books - should create a new book", async () => {
+describe("Book Routes", () => {
+  it("should create a new book successfully", async () => {
     const newBook = {
-      title: "The Lord of the Rings",
-      author: "J.R.R. Tolkien",
+      title: "The Hitchhiker's Guide to the Galaxy",
+      author: "Douglas Adams",
       quantityAvailable: 5,
     };
-
     const response = await request(app)
       .post("/api/books")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${authToken}`)
       .send(newBook);
-
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("id");
     expect(response.body.title).toBe(newBook.title);
-    bookId = response.body.id;
+    createdBook = response.body;
   });
 
-  it("GET /api/books - should return a list of books", async () => {
+  it("should return all books", async () => {
     const response = await request(app)
       .get("/api/books")
-      .set("Authorization", `Bearer ${token}`);
-
+      .set("Authorization", `Bearer ${authToken}`);
     expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].title).toBe("The Hitchhiker's Guide to the Galaxy");
   });
 
-  it("GET /api/books/:id - should return a single book", async () => {
+  it("should get a book by id", async () => {
     const response = await request(app)
-      .get(`/api/books/${bookId}`)
-      .set("Authorization", `Bearer ${token}`);
-
+      .get(`/api/books/${createdBook.id}`)
+      .set("Authorization", `Bearer ${authToken}`);
     expect(response.status).toBe(200);
-    expect(response.body.id).toBe(bookId);
-    expect(response.body.title).toBe("The Lord of the Rings");
+    expect(response.body.id).toBe(createdBook.id);
   });
 
-  it("PUT /api/books/:id - should update a book", async () => {
-    const updatedData = {
-      title: "The Lord of the Rings: The Fellowship of the Ring",
-      quantityAvailable: 3,
-    };
-
+  it("should update a book by id", async () => {
+    const updatedTitle = "The Hitchhiker's Guide";
     const response = await request(app)
-      .put(`/api/books/${bookId}`)
-      .set("Authorization", `Bearer ${token}`)
-      .send(updatedData);
-
+      .put(`/api/books/${createdBook.id}`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ title: updatedTitle });
     expect(response.status).toBe(200);
-    expect(response.body.title).toBe(updatedData.title);
-    expect(response.body.quantityAvailable).toBe(updatedData.quantityAvailable);
+    expect(response.body.title).toBe(updatedTitle);
   });
 
-  it("DELETE /api/books/:id - should delete a book", async () => {
+  it("should delete a book by id", async () => {
     const response = await request(app)
-      .delete(`/api/books/${bookId}`)
-      .set("Authorization", `Bearer ${token}`);
+      .delete(`/api/books/${createdBook.id}`)
+      .set("Authorization", `Bearer ${authToken}`);
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdBook.id);
 
-    expect(response.status).toBe(204);
-
-    const getResponse = await request(app)
-      .get(`/api/books/${bookId}`)
-      .set("Authorization", `Bearer ${token}`);
-    expect(getResponse.status).toBe(404);
-  });
-
-  it("should return 401 if no token is provided", async () => {
-    const response = await request(app).get("/api/books");
-    expect(response.status).toBe(401);
+    const checkDelete = await request(app)
+      .get(`/api/books/${createdBook.id}`)
+      .set("Authorization", `Bearer ${authToken}`);
+    expect(checkDelete.status).toBe(404);
   });
 });

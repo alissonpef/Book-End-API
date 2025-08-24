@@ -1,27 +1,23 @@
 const request = require("supertest");
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
 const authRoutes = require("../../src/routes/auth.routes");
+const { prisma, cleanDatabase } = require("../helpers/db");
 
 const app = express();
-const prisma = new PrismaClient();
 
 app.use(express.json());
 app.use(authRoutes);
 
-// Variáveis de teste
 const testUser = {
   name: "Test User",
   email: "test@example.com",
   password: "password123",
 };
 
-beforeAll(async () => {
-  await prisma.user.deleteMany({});
-});
+beforeAll(cleanDatabase);
 
 afterAll(async () => {
-  await prisma.user.deleteMany({});
+  await cleanDatabase();
   await prisma.$disconnect();
 });
 
