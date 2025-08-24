@@ -29,7 +29,6 @@
     "dev": "npm run services:up && npm run services:wait && nodemon src/index.js",
     "test": "npm run services:up:test && npm run services:wait && npm run migrate:test && dotenv -e .env.test -- jest --runInBand",
     "posttest": "npm run services:down:test",
-    "test:watch": "dotenv -e .env.test -- jest --watchAll --runInBand",
     "services:up": "docker compose -f infra/compose.yaml --env-file .env up -d",
     "services:down": "docker compose -f infra/compose.yaml --env-file .env down",
     "lint": "npm run lint:check && npm run format:check",
