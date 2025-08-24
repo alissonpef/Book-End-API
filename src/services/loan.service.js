@@ -1,66 +1,81 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+async function getAllLoans() {
+  return await prisma.loan.findMany({
+    include: {
+      user: true,
+      book: true,
+    },
+  });
+}
+
+async function getLoanById(id) {
+  return await prisma.loan.findUnique({
+    where: { id: parseInt(id) },
+    include: { user: true, book: true },
+  });
+}
+
 async function createLoan(userId, bookId) {
   const book = await prisma.book.findUnique({
     where: { id: parseInt(bookId) },
   });
 
-  if (!book) {
-    throw new Error("Book not found.");
-  }
-  if (book.quantityAvailable < 1) {
-    throw new Error("No available copies of this book.");
+  if (!book || book.quantityAvailable < 1) {
+    throw new Error("Não há exemplares disponíveis!");
   }
 
-  return prisma.$transaction(async (tx) => {
-    await tx.book.update({
-      where: { id: parseInt(bookId) },
-      data: { quantityAvailable: { decrement: 1 } },
-    });
-
-    const fourteenDaysFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-
-    const newLoan = await tx.loan.create({
-      data: {
-        userId: userId,
-        bookId: parseInt(bookId),
-        returnDate: fourteenDaysFromNow,
+  const newLoan = await prisma.loan.create({
+    data: {
+      userId: parseInt(userId),
+      bookId: parseInt(bookId),
+      returnDate: new Date(new Date().setDate(new Date().getDate() + 14)),
+      book: {
+        update: {
+          quantityAvailable: book.quantityAvailable - 1,
+        },
       },
-    });
-
-    return newLoan;
+    },
   });
+
+  return newLoan;
 }
 
-async function returnLoan(loanId) {
-  const loan = await prisma.loan.findUnique({
-    where: { id: parseInt(loanId) },
-  });
+async function returnLoan(id) {
+  const loan = await prisma.loan.findUnique({ where: { id: parseInt(id) } });
 
   if (!loan) {
-    throw new Error("Loan not found.");
+    throw new Error("Empréstimo não encontrado!");
   }
   if (loan.returnedAt) {
-    throw new Error("This loan has already been returned.");
+    throw new Error("Este livro já foi devolvido.");
   }
 
-  return prisma.$transaction(async (tx) => {
-    await tx.book.update({
-      where: { id: loan.bookId },
-      data: { quantityAvailable: { increment: 1 } },
-    });
+  const today = new Date();
+  const isLate = today > loan.returnDate;
 
-    const updatedLoan = await tx.loan.update({
-      where: { id: parseInt(loanId) },
-      data: { returnedAt: new Date() },
-    });
-
-    return updatedLoan;
+  const updatedLoan = await prisma.loan.update({
+    where: { id: parseInt(id) },
+    data: {
+      returnedAt: today,
+      isLate,
+      book: {
+        update: {
+          quantityAvailable: {
+            increment: 1,
+          },
+        },
+      },
+    },
   });
+
+  return updatedLoan;
 }
 
 module.exports = {
+  getAllLoans,
+  getLoanById,
   createLoan,
   returnLoan,
 };
