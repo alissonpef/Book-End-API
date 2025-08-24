@@ -1,9 +1,7 @@
 const express = require("express");
-const bookRoutes = require("./routes/book.routes");
 const authRoutes = require("./routes/auth.routes");
 const apiRoutes = require("./routes/api.routes");
 const errorMiddleware = require("./middlewares/error.middleware");
-const ensureAuth = require("./middlewares/auth.middleware");
 
 const app = express();
 
@@ -14,7 +12,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(authRoutes);
-app.use("/api", ensureAuth, apiRoutes);
+app.use("/api", apiRoutes);
 
 app.use(errorMiddleware);
 
